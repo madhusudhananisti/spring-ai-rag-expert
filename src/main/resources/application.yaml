@@ -1,13 +1,16 @@
 spring:
   application:
     name: spring-ai-rag-expert
-#Pass API key as environment variable, e.g. -DOPENAI_API_KEY=your-api-key
+  #Pass API key as environment variable, e.g. -DOPENAI_API_KEY=your-api-key
   ai:
     openai:
       api-key: ${OPENAI_API_KEY}
       embedding:
         options:
           model: text-embedding-3-small
+      chat:
+        options:
+          model: gpt-4-turbo
     vectorstore:
       milvus:
         client:
@@ -20,10 +23,6 @@ spring:
         embeddingDimension: 1536
         indexType: IVF_FLAT
         metricType: COSINE
-
-    chat:
-      options:
-        model: gpt-4-turbo
 sfg:
   aiapp:
     vectorStorePath: E:\\Code\\vectorstore.json
@@ -37,3 +36,23 @@ sfg:
       - https://yamahaoutboards.com/outboards/xto-offshore/v8-5-6l/xf425/pb_spt_open-322_tw_lxf425usb2_8-26-2021_occ
       # Scout 380 LXF - Weight 19,443 lbs
       - https://yamahaoutboards.com/outboards/xto-offshore/v8-5-6l/xf425/pb_sct_380lxf_tr_xf425_8-30-2018_occ
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
