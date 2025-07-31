@@ -51,18 +51,24 @@ public class LoadVectorStore implements CommandLineRunner {
         ListCollectionsResponse responseList = milvusServiceClient.listCollections(listParam).getData();
 
         List<String> collections = responseList.collectionNames;
+        boolean ifPresent = false;
         for(String s : collections) {
             log.info("Collection names :: {}", s);
+            if(s.equalsIgnoreCase("vector_store")) {
+                ifPresent = true;
+            }
         }
 
-        milvusServiceClient.dropCollection(
-                DropCollectionParam.newBuilder()
-                        .withCollectionName("vector_store")
-                        .build()
-        );
+        if(false) {
+            milvusServiceClient.dropCollection(
+                    DropCollectionParam.newBuilder()
+                            .withCollectionName("vector_store")
+                            .build()
+            );
+        }
 
 
-    if (true) {
+    if (!ifPresent) {
         // Create or load vectors
         //log.info("No collection found");
             log.info("Collection does not exist → creating...");
@@ -143,7 +149,7 @@ public class LoadVectorStore implements CommandLineRunner {
         if(vectorStore.similaritySearch("Sportsman").isEmpty()) {
             log.info("Loading documents into vector store");
             vectorStoreProperties.getDocumentsToLoad().forEach(document -> {
-                log.info("Loading doucment :: "+document.getFilename());
+                log.info("Loading document :: "+document.getFilename());
                 TikaDocumentReader documentReader = new TikaDocumentReader(document);
                 List<Document> documents = documentReader.get();
                 TextSplitter textSpiltter = new TokenTextSplitter();
@@ -173,6 +179,6 @@ public class LoadVectorStore implements CommandLineRunner {
                 vectorStore.add(safeDocs);
             });
         }
-        log.debug("Vector store loaded ...");
+        log.info("Vector store loaded ...");
     }
 }
