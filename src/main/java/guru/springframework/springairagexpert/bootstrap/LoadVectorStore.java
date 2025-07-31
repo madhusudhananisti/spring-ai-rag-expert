@@ -1,5 +1,6 @@
 package guru.springframework.springairagexpert.bootstrap;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import guru.springframework.springairagexpert.config.VectorStoreProperties;
 import io.milvus.client.MilvusServiceClient;
 import io.milvus.grpc.DataType;
@@ -19,7 +20,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.stream.Collectors;
 
 
 @Slf4j
@@ -104,8 +107,8 @@ public class LoadVectorStore implements CommandLineRunner {
                             FieldType.newBuilder()
                                     .withName("metadata")
                                     .withDescription("Any extra metadata")
-                                    .withDataType(DataType.VarChar)
-                                    .withMaxLength(1024)  // adjust as needed
+                                    .withDataType(DataType.JSON)
+                                    .withMaxLength(65535)  // adjust as needed
                                     .build()
                     )
                     .build();
@@ -119,7 +122,7 @@ public class LoadVectorStore implements CommandLineRunner {
                         .withFieldName("embedding")
                         .withIndexName("idx_embedding")
                         .withIndexType(IndexType.IVF_FLAT)  // or IVF_SQ8 etc.
-                        .withMetricType(MetricType.L2)
+                        .withMetricType(MetricType.COSINE)
                         .withExtraParam("{\"nlist\":1024}")
                         .build()
         );
@@ -145,7 +148,29 @@ public class LoadVectorStore implements CommandLineRunner {
                 List<Document> documents = documentReader.get();
                 TextSplitter textSpiltter = new TokenTextSplitter();
                 List<Document> documentListSplit = textSpiltter.apply(documents);
-                vectorStore.add(documentListSplit);
+                // ✅ FIX: convert metadata to String for each Document
+                List<Document> safeDocs = documentListSplit.stream()
+                        .map(doc -> {
+                            String safeMetadataString = "";
+                            try {
+                                if (doc.getMetadata() != null) {
+                                    safeMetadataString = new ObjectMapper().writeValueAsString(doc.getMetadata());
+                                }
+                            } catch (Exception e) {
+                                log.warn("Could not stringify metadata: {}", e.getMessage());
+                            }
+
+                            // pack the metadata into the text
+                            String newText = doc.getText() + "\nMETADATA:" + safeMetadataString;
+
+                            return new Document(
+                                    doc.getId(),
+                                    newText,
+                                    new HashMap<>());
+
+                        })
+                        .collect(Collectors.toList());
+                vectorStore.add(safeDocs);
             });
         }
         log.debug("Vector store loaded ...");
